@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "nerd",
+            "request": "launch",
+            "name": "Debug main.n",
+            "program": "${workspaceFolder}/_bin/main",
+            "preLaunchTask": "nerd: build main.n",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "terminal": "integrated"
+        }
+    ]
+}
