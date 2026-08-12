@@ -28,3 +28,23 @@ gold: raw-gold
 1k-storage-part: silicon[4] quartz-enriched-iron redstone glass[3]
 
 rs: rs-controller rs-diskdrive rs-crafting-grid 64k-storage-disk
+
+advanced-energy-cube: infused-alloy[4] osmium[2] energy-tablet[2] basic-energy-cube
+basic-energy-cube: redstone[4] iron[2] steel-casing energy-tablet[2]
+steel-casing: osmium steel[4] glass[4]
+steel: steel-dust
+steel-dust: iron-dust coal[4] iron-ore-hammer
+iron-dust[2]: raw-iron iron-ore-hammer
+iron-ore-hammer: stick[3] iron-block
+iron-block: iron[9]
+stick[4]: plank[2]
+infused-alloy: redstone copper
+copper: raw-copper
+energy-tablet: redstone[4] gold[3] infused-alloy[2]
+osmium: raw-osmium
+
+advanced-solar-generator: solar-generator[4] infused-alloy[2] iron[3]
+solar-generator: solar-panel[3] infused-alloy[2] iron osmium[2] energy-tablet
+solar-panel: glass-pane[3] redstone[2] infused-alloy osmium[3]
+glass-pane[16]: glass[6]
+
