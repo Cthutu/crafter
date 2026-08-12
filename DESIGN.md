@@ -51,8 +51,11 @@ An optional stack size can be supplied before the recipes file:
 stack size are displayed as the number of full stacks and the leftover count;
 for example, 100 is displayed as `1/36` with a stack size of 64.
 
+Multiple recipes can be requested in one command. They are combined into a
+single crafting plan, including any ingredients they share:
+`crafter my-recipes.txt crafting-table plank`.
+
 # Implementation
 
 It will be implemented in the `Nerd` programming language, whose repository is
 found at `~/nerd`.
-

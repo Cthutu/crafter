@@ -353,23 +353,23 @@ print_plan :: fn (plan: []PlanEntry, max_stage: usize, stack_size: u64) {
 
 main :: fn (args: []string) -> i32 {
     recipes_path : string
-    target : string
+    targets_start : usize
     stack_size : u64 = 0
 
-    on args.count == 3 => {
+    on args.count >= 3 && args[1] != "--stack" => {
         recipes_path = args[1]
-        target = args[2]
+        targets_start = 2
     }
-    else on (args.count == 5 && args[1] == "--stack") => {
+    else on (args.count >= 5 && args[1] == "--stack") => {
         on !parse_positive_u64(args[2], ^stack_size) => {
             prn("--stack must be a positive integer")
             return 2
         }
         recipes_path = args[3]
-        target = args[4]
+        targets_start = 4
     }
     else {
-        prn("Usage: crafter [--stack <n>] <recipes-file> <item>")
+        prn("Usage: crafter [--stack <n>] <recipes-file> <recipe>...")
         return 2
     }
 
@@ -387,18 +387,27 @@ main :: fn (args: []string) -> i32 {
         return 1
     }
 
-    target_index := find_recipe(recipes[..], target)
     max_stage : usize = 0
     ok := yes
-    on target_index >= 0 => {
-        max_stage = recipe_depth(recipes[..], target_index.as(usize), ^ok)
-        on !ok => return 1
+    for i := targets_start;
+    i < args.count;
+    i += 1 {
+        target_index := find_recipe(recipes[..], args[i])
+        on target_index >= 0 => {
+            target_depth := recipe_depth(recipes[..], target_index.as(usize), ^ok)
+            on !ok => return 1
+            on target_depth > max_stage => max_stage = target_depth
+        }
     }
 
     plan : [..]PlanEntry
     defer plan.free()
-    add_need(recipes[..], ^plan, target, 1, ^ok)
-    on !ok => return 1
+    for i := targets_start;
+    i < args.count;
+    i += 1 {
+        add_need(recipes[..], ^plan, args[i], 1, ^ok)
+        on !ok => return 1
+    }
 
     print_plan(plan[..], max_stage, stack_size)
     return 0
