@@ -1,3 +1,405 @@
-main :: fn () {
-    prn("Hello, World!")
+str :: use std.string
+
+c_fopen :: ffi "c" fopen (^i8, ^i8) -> ^void
+
+c_fseek :: ffi "c" fseek (^void, i64, i32) -> i32
+
+c_ftell :: ffi "c" ftell (^void) -> i64
+
+c_fread :: ffi "c" fread (^void, usize, usize, ^void) -> usize
+
+c_fclose :: ffi "c" fclose (^void) -> i32
+
+SEEK_END :: 2
+
+ItemAmount :: plex {
+    name string
+    quantity u64
+}
+
+Recipe :: plex {
+    output ItemAmount
+    ingredients [..]ItemAmount
+    depth usize
+    depth_state u8
+}
+
+PlanEntry :: plex {
+    name string
+    demand u64
+    quantity u64
+    stage usize
+    raw bool
+}
+
+is_name_byte :: fn (byte: u8) -> bool {
+    return (byte >= 'a' && byte <= 'z') || (byte >= 'A' && byte <= 'Z') || (byte >= '0' && byte <= '9') || byte == '_' || byte == '-'
+}
+
+skip_spaces :: fn (text: string, cursor: ^usize) {
+    for cursor^ < text.count && (text.data[cursor^] == ' ' || text.data[cursor^] == '\t' || text.data[cursor^] == '\r') {
+        cursor^ += 1
+    }
+}
+
+parse_amount :: fn (text: string, cursor: ^usize, amount: ^ItemAmount) -> bool {
+    skip_spaces(text, cursor)
+    start := cursor^
+
+    for cursor^ < text.count && is_name_byte(text.data[cursor^]) {
+        cursor^ += 1
+    }
+    on cursor^ == start => return no
+
+    amount.name = text[start .. cursor^]
+    amount.quantity = 1
+
+    on cursor^ < text.count && text.data[cursor^] == '[' => {
+        cursor^ += 1
+        digit_start := cursor^
+        quantity : u64 = 0
+
+        for cursor^ < text.count && text.data[cursor^] >= '0' && text.data[cursor^] <= '9' {
+            digit := (text.data[cursor^] - '0').as(u64)
+            on quantity > 1844674407370955161 ||(quantity == 1844674407370955161 && digit > 5) => return no
+            quantity = quantity * 10 + digit
+            cursor^ += 1
+        }
+
+        on cursor^ == digit_start || cursor^ >= text.count || text.data[cursor^] != ']' => return no
+        cursor^ += 1
+        on quantity == 0 => return no
+        amount.quantity = quantity
+    }
+
+    return yes
+}
+
+parse_positive_u64 :: fn (text: string, value: ^u64) -> bool {
+    on text.count == 0 => return no
+    parsed : u64 = 0
+
+    for i: usize = 0;
+    i < text.count;
+    i += 1 {
+        byte := text.data[i]
+        on byte < '0' || byte > '9' => return no
+        digit := (byte - '0').as(u64)
+        on parsed > 1844674407370955161 ||(parsed == 1844674407370955161 && digit > 5) => return no
+        parsed = parsed * 10 + digit
+    }
+
+    on parsed == 0 => return no
+    value^ = parsed
+    return yes
+}
+
+line_without_comment :: fn (line: string) -> string {
+    for i: usize = 0;
+    i < line.count;
+    i += 1 {
+        on line.data[i] == '#' => return line[.. i]
+    }
+    return line
+}
+
+find_recipe :: fn (recipes: []Recipe, name: string) -> isize {
+    for i: usize = 0;
+    i < recipes.count;
+    i += 1 {
+        on recipes[i].output.name == name => return i.as(isize)
+    }
+    return - 1
+}
+
+parse_recipe_line :: fn (line : string,
+line_number : usize,
+recipes : ^[..]Recipe) -> bool {
+    text := line_without_comment(line).trim()
+    on text.count == 0 => return yes
+
+    cursor : usize = 0
+    output : ItemAmount
+
+    on !parse_amount(text, ^cursor, ^output) => {
+        prn($"{line_number}: invalid recipe output")
+        return no
+    }
+
+    skip_spaces(text, ^cursor)
+    on cursor >= text.count || text.data[cursor] != ':' => {
+        prn($"{line_number}: expected ':' after recipe output")
+        return no
+    }
+    cursor += 1
+
+    on find_recipe((recipes^)[..], output.name) >= 0 => {
+        prn($"{line_number}: duplicate recipe for '{output.name}'")
+        return no
+    }
+
+    recipe := Recipe {
+        output
+        ...
+    }
+    for {
+        skip_spaces(text, ^cursor)
+        on cursor >= text.count => break
+
+        ingredient : ItemAmount
+        on !parse_amount(text, ^cursor, ^ingredient) => {
+            prn($"{line_number}: invalid ingredient")
+            recipe.ingredients.free()
+            return no
+        }
+        recipe.ingredients.push(ingredient)
+
+        on cursor < text.count && text.data[cursor] != ' ' && text.data[cursor] != '\t' && text.data[cursor] != '\r' => {
+            prn($"{line_number}: expected whitespace between ingredients")
+            recipe.ingredients.free()
+            return no
+        }
+    }
+
+    on recipe.ingredients.count == 0 => {
+        prn($"{line_number}: recipe has no ingredients")
+        recipe.ingredients.free()
+        return no
+    }
+
+    recipes^.push(recipe)
+    return yes
+}
+
+parse_recipes :: fn (source: string, recipes: ^[..]Recipe) -> bool {
+    lines := source.split("\n")
+    defer lines.free()
+
+    for i: usize = 0;
+    i < lines.count;
+    i += 1 {
+        on !parse_recipe_line(lines[i], i + 1, recipes) => return no
+    }
+    return yes
+}
+
+free_recipes :: fn (recipes: ^[..]Recipe) {
+    for i: usize = 0;
+    i < recipes.count;
+    i += 1 {
+        (recipes^)[i].ingredients.free()
+    }
+    recipes^.free()
+}
+
+read_file :: fn (path: string, contents: ^[..]u8) -> bool {
+    file := c_fopen(path.c_string(), c"rb")
+    on file == nil => return no
+    defer _ := c_fclose(file)
+
+    on c_fseek(file, 0, SEEK_END) != 0 => return no
+    size := c_ftell(file)
+    on size < 0 => return no
+    on c_fseek(file, 0, 0) != 0 => return no
+
+    contents^.resize_undefined_to(size.as(usize))
+    on size == 0 => return yes
+
+    bytes_read := c_fread(contents^.data.as(^void), 1, size.as(usize), file)
+    on bytes_read != size.as(usize) => {
+        contents^.clear()
+        return no
+    }
+    return yes
+}
+
+recipe_depth :: fn (recipes: []Recipe, index: usize, ok: ^bool) -> usize {
+    recipe := ^recipes[index]
+    on recipe.depth_state == 2 => return recipe.depth
+    on recipe.depth_state == 1 => {
+        prn($"recipe cycle includes '{recipe.output.name}'")
+        ok^ = no
+        return 0
+    }
+
+    recipe.depth_state = 1
+    depth : usize = 1
+    for i: usize = 0;
+    i < recipe.ingredients.count;
+    i += 1 {
+        ingredient_index := find_recipe(recipes, recipe.ingredients[i].name)
+        on ingredient_index >= 0 => {
+            ingredient_depth := recipe_depth(recipes,
+            ingredient_index.as(usize),
+            ok)
+            on !ok^ => return 0
+            on ingredient_depth + 1 > depth => depth = ingredient_depth + 1
+        }
+    }
+    recipe.depth = depth
+    recipe.depth_state = 2
+    return depth
+}
+
+find_plan_entry :: fn (plan: []PlanEntry, name: string) -> isize {
+    for i: usize = 0;
+    i < plan.count;
+    i += 1 {
+        on plan[i].name == name => return i.as(isize)
+    }
+    return - 1
+}
+
+add_raw_need :: fn (plan: ^[..]PlanEntry, name: string, quantity: u64) {
+    index := find_plan_entry((plan^)[..], name)
+    on index >= 0 => {
+        (plan^)[index.as(usize)].quantity += quantity
+        (plan^)[index.as(usize)].demand += quantity
+        return
+    }
+
+    plan^.push(PlanEntry {
+        name
+        demand: quantity
+        quantity
+        stage : 0
+        raw : yes
+    }
+    )
+}
+
+add_need :: fn (recipes : []Recipe,
+plan : ^[..]PlanEntry,
+name : string,
+quantity : u64,
+ok : ^bool) {
+    recipe_index := find_recipe(recipes, name)
+    on recipe_index < 0 => {
+        add_raw_need(plan, name, quantity)
+        return
+    }
+
+    recipe := ^recipes[recipe_index.as(usize)]
+    entry_index := find_plan_entry((plan^)[..], name)
+    old_batches : u64 = 0
+
+    on entry_index >= 0 => {
+        entry := ^(plan^)[entry_index.as(usize)]
+        old_batches = (entry.demand + recipe.output.quantity - 1) / recipe.output.quantity
+        entry.demand += quantity
+        new_batches := (entry.demand + recipe.output.quantity - 1) / recipe.output.quantity
+        entry.quantity = new_batches * recipe.output.quantity
+    }
+    else {
+        batches := (quantity + recipe.output.quantity - 1) / recipe.output.quantity
+        plan^.push(PlanEntry {
+            name
+            demand : quantity
+            quantity : batches * recipe.output.quantity
+            stage : recipe.depth
+            raw : no
+        }
+        )
+        entry_index = (plan.count - 1).as(isize)
+    }
+
+    entry := ^(plan^)[entry_index.as(usize)]
+    new_batches := (entry.demand + recipe.output.quantity - 1) / recipe.output.quantity
+    additional_batches := new_batches - old_batches
+    on additional_batches == 0 => return
+
+    for i: usize = 0;
+    i < recipe.ingredients.count;
+    i += 1 {
+        ingredient := recipe.ingredients[i]
+        required := ingredient.quantity * additional_batches
+        add_need(recipes, plan, ingredient.name, required, ok)
+        on !ok^ => return
+    }
+}
+
+print_quantity :: fn (name: string, quantity: u64, stack_size: u64) {
+    on stack_size > 0 && quantity > stack_size => {
+        stacks := quantity / stack_size
+        left_over := quantity % stack_size
+        prn($"    {name}: {stacks}/{left_over}")
+        return
+    }
+    prn($"    {name}: {quantity}")
+}
+
+print_plan :: fn (plan: []PlanEntry, max_stage: usize, stack_size: u64) {
+    prn("Ingredients:")
+    for i: usize = 0;
+    i < plan.count;
+    i += 1 {
+        on plan[i].raw => print_quantity(plan[i].name, plan[i].quantity, stack_size)
+    }
+
+    for stage: usize = 1;
+    stage <= max_stage;
+    stage += 1 {
+        prn("")
+        prn($"Stage {stage}:")
+        for i: usize = 0;
+        i < plan.count;
+        i += 1 {
+            on !plan[i].raw && plan[i].stage == stage => {
+                print_quantity(plan[i].name, plan[i].quantity, stack_size)
+            }
+        }
+    }
+}
+
+main :: fn (args: []string) -> i32 {
+    recipes_path : string
+    target : string
+    stack_size : u64 = 0
+
+    on args.count == 3 => {
+        recipes_path = args[1]
+        target = args[2]
+    }
+    else on (args.count == 5 && args[1] == "--stack") => {
+        on !parse_positive_u64(args[2], ^stack_size) => {
+            prn("--stack must be a positive integer")
+            return 2
+        }
+        recipes_path = args[3]
+        target = args[4]
+    }
+    else {
+        prn("Usage: crafter [--stack <n>] <recipes-file> <item>")
+        return 2
+    }
+
+    contents : [..]u8
+    defer contents.free()
+    on !read_file(recipes_path, ^contents) => {
+        prn($"Could not read recipes file '{recipes_path}'.")
+        return 1
+    }
+
+    recipes : [..]Recipe
+    defer free_recipes(^recipes)
+    on !parse_recipes(contents[..].as(string), ^recipes) => {
+        prn($"Could not parse recipes file '{recipes_path}'.")
+        return 1
+    }
+
+    target_index := find_recipe(recipes[..], target)
+    max_stage : usize = 0
+    ok := yes
+    on target_index >= 0 => {
+        max_stage = recipe_depth(recipes[..], target_index.as(usize), ^ok)
+        on !ok => return 1
+    }
+
+    plan : [..]PlanEntry
+    defer plan.free()
+    add_need(recipes[..], ^plan, target, 1, ^ok)
+    on !ok => return 1
+
+    print_plan(plan[..], max_stage, stack_size)
+    return 0
 }

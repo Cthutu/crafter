@@ -1,0 +1,9 @@
+# A small crafting tree with batch outputs and a shared intermediate.
+plank[4]: log
+stick[4]: plank[2]
+crafting-table: plank[4]
+wooden-pickaxe: plank[3] stick[2]
+workshop: crafting-table wooden-pickaxe
+
+# Stack display examples: 100 becomes 1/36 with --stack 64, while 64 stays 64.
+stack-test: loose-items[100] exact-stack[64]

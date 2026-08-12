@@ -6,11 +6,11 @@ check:
 
 build:
     @mkdir -p _bin
-    nerd build --output _bin/main main.n
+    nerd build --output _bin/crafter main.n
 
 run *args:
     just build
-    ./_bin/main {{args}}
+    ./_bin/crafter {{args}}
 
 clean:
     rm -rf _*

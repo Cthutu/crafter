@@ -22,7 +22,7 @@ An example recipe file is:
 # Each recipe is defined by a line with the following format:
 # item_name[quantity]: ingredient1[quantity] ingredient2[quantity] ... ingredientN[quantity]
 #
-# Quantity (in braces) is optional and defaults to 1 if not specified.
+# Quantity (in brackets) is optional and defaults to 1 if not specified.
 #
 # If an item can be crafted from other items, those items should also be
 # defined in the recipe file.
@@ -32,7 +32,8 @@ plank[4]: log
 crafting-table: plank[4] 
 ```
 
-Then, when the user runs the command `crafter crafting-table`, the output will be:
+Then, when the user runs the command `crafter my-recipes.txt crafting-table`,
+the output will be:
 
 ```
 Ingredients:
@@ -45,10 +46,13 @@ Stage 2:
     crafting-table: 1
 ```
 
+An optional stack size can be supplied before the recipes file:
+`crafter --stack 64 my-recipes.txt crafting-table`. Quantities greater than the
+stack size are displayed as the number of full stacks and the leftover count;
+for example, 100 is displayed as `1/36` with a stack size of 64.
+
 # Implementation
 
 It will be implemented in the `Nerd` programming language, whose repository is
 found at `~/nerd`.
-
-
 

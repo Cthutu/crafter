@@ -1,0 +1,30 @@
+rs-controller: quartz-enriched-iron[4] advanced-processor silicon[3] machine-casing
+machine-casing: quartz-enriched-iron[8] stone
+advanced-processor: raw-advanced-processor
+raw-advanced-processor: processor-binding diamond silicon redstone
+processor-binding[8]: string[2] slimeball
+rs-diskdrive: quartz-enriched-iron[6] machine-casing advanced-processor chest
+chest: plank[8]
+plank[4]: log
+quartz-enriched-iron: iron[3] quartz
+iron: raw-iron
+rs-grid: improved-processor[2] machine-casing quartz-enriched-iron glass construction-core destruction-core
+glass: sand
+construction-core: basic-processor glowstone-dust
+destruction-core: basic-processor quartz
+basic-processor: raw-basic-processor
+raw-basic-processor: processor-binding iron silicon redstone
+rs-crafting-grid: rs-grid advanced-processor crafting-table
+crafting-table: plank[4]
+stone: cobble-stone
+silicon: quartz
+64k-storage-disk: glass[2] redstone[3] quartz-enriched-iron[3] 64k-storage-part
+64k-storage-part: advanced-processor[4] quartz-enriched-iron redstone 16k-storage-part[3]
+16k-storage-part: improved-processor[4] quartz-enriched-iron redstone 4k-storage-part[3]
+improved-processor: raw-improved-processor
+raw-improved-processor: processor-binding gold silicon redstone
+gold: raw-gold
+4k-storage-part: basic-processor[4] quartz-enriched-iron redstone 1k-storage-part[3]
+1k-storage-part: silicon[4] quartz-enriched-iron redstone glass[3]
+
+rs: rs-controller rs-diskdrive rs-crafting-grid 64k-storage-disk
