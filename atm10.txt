@@ -6,7 +6,7 @@ processor-binding[8]: string[2] slimeball
 rs-diskdrive: quartz-enriched-iron[6] machine-casing advanced-processor chest
 chest: plank[8]
 plank[4]: log
-quartz-enriched-iron: iron[3] quartz
+quartz-enriched-iron[4]: iron[3] quartz
 iron: raw-iron
 rs-grid: improved-processor[2] machine-casing quartz-enriched-iron glass construction-core destruction-core
 glass: sand
@@ -27,15 +27,15 @@ gold: raw-gold
 4k-storage-part: basic-processor[4] quartz-enriched-iron redstone 1k-storage-part[3]
 1k-storage-part: silicon[4] quartz-enriched-iron redstone glass[3]
 
-rs: rs-controller rs-diskdrive rs-crafting-grid 64k-storage-disk
+*rs: rs-controller rs-diskdrive rs-crafting-grid 64k-storage-disk
 
 advanced-energy-cube: infused-alloy[4] osmium[2] energy-tablet[2] basic-energy-cube
 basic-energy-cube: redstone[4] iron[2] steel-casing energy-tablet[2]
 steel-casing: osmium steel[4] glass[4]
 steel: steel-dust
-steel-dust: iron-dust coal[4] iron-ore-hammer
+steel-dust: iron-dust coal[4] iron-ore-hammer[+]
 iron-dust[2]: raw-iron iron-ore-hammer
-iron-ore-hammer: stick[3] iron-block
+iron-ore-hammer: stick[3] iron-block[2]
 iron-block: iron[9]
 stick[4]: plank[2]
 infused-alloy: redstone copper
@@ -47,4 +47,15 @@ advanced-solar-generator: solar-generator[4] infused-alloy[2] iron[3]
 solar-generator: solar-panel[3] infused-alloy[2] iron osmium[2] energy-tablet
 solar-panel: glass-pane[3] redstone[2] infused-alloy osmium[3]
 glass-pane[16]: glass[6]
+
+*energy: coal-generator metallurgic-infuser advanced-solar-generator advanced-energy-cube
+
+coal-genarator: coal[6] red-torch[2] machine-frame
+red-torch: stick redstone
+machine-frame: iron[4] gold-nugget[2] blue-dye[2]
+gold-nugget[9]: gold
+blue-dye: lapis-lazuli
+
+metallurgic-infuser: furnace[2] osmium iron[4] redstone[2]
+furnace: cobblestone[8]
 

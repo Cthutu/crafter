@@ -15,6 +15,7 @@ SEEK_END :: 2
 ItemAmount :: plex {
     name string
     quantity u64
+    reusable bool
 }
 
 Recipe :: plex {
@@ -27,13 +28,14 @@ Recipe :: plex {
 PlanEntry :: plex {
     name string
     demand u64
+    reusable_demand u64
     quantity u64
     stage usize
     raw bool
 }
 
 is_name_byte :: fn (byte: u8) -> bool {
-    return (byte >= 'a' && byte <= 'z') || (byte >= 'A' && byte <= 'Z') || (byte >= '0' && byte <= '9') || byte == '_' || byte == '-'
+    return (byte >= 'a' && byte <= 'z') || (byte >= 'A' && byte <= 'Z') || (byte >= '0' && byte <= '9') || byte == '_' || byte == '-' || byte == '*'
 }
 
 skip_spaces :: fn (text: string, cursor: ^usize) {
@@ -53,9 +55,19 @@ parse_amount :: fn (text: string, cursor: ^usize, amount: ^ItemAmount) -> bool {
 
     amount.name = text[start .. cursor^]
     amount.quantity = 1
+    amount.reusable = no
 
     on cursor^ < text.count && text.data[cursor^] == '[' => {
         cursor^ += 1
+        on cursor^ < text.count && text.data[cursor^] == '+' => {
+            amount.reusable = yes
+            cursor^ += 1
+            on cursor^ < text.count && text.data[cursor^] == ']' => {
+                cursor^ += 1
+                return yes
+            }
+        }
+
         digit_start := cursor^
         quantity : u64 = 0
 
@@ -123,6 +135,10 @@ recipes : ^[..]Recipe) -> bool {
 
     on !parse_amount(text, ^cursor, ^output) => {
         prn($"{line_number}: invalid recipe output")
+        return no
+    }
+    on output.reusable => {
+        prn($"{line_number}: recipe output cannot be reusable")
         return no
     }
 
@@ -250,17 +266,30 @@ find_plan_entry :: fn (plan: []PlanEntry, name: string) -> isize {
     return - 1
 }
 
-add_raw_need :: fn (plan: ^[..]PlanEntry, name: string, quantity: u64) {
+add_raw_need :: fn (plan : ^[..]PlanEntry,
+name : string,
+quantity : u64,
+reusable : bool) {
     index := find_plan_entry((plan^)[..], name)
     on index >= 0 => {
-        (plan^)[index.as(usize)].quantity += quantity
-        (plan^)[index.as(usize)].demand += quantity
+        entry := ^(plan^)[index.as(usize)]
+        added := quantity
+        on reusable => {
+            on entry.reusable_demand >= quantity => return
+            added = quantity - entry.reusable_demand
+            entry.reusable_demand = quantity
+        }
+        entry.quantity += added
+        entry.demand += added
         return
     }
 
+    reusable_demand : u64 = 0
+    on reusable => reusable_demand = quantity
     plan^.push(PlanEntry {
         name
         demand: quantity
+        reusable_demand
         quantity
         stage : 0
         raw : yes
@@ -272,10 +301,11 @@ add_need :: fn (recipes : []Recipe,
 plan : ^[..]PlanEntry,
 name : string,
 quantity : u64,
+reusable : bool,
 ok : ^bool) {
     recipe_index := find_recipe(recipes, name)
     on recipe_index < 0 => {
-        add_raw_need(plan, name, quantity)
+        add_raw_need(plan, name, quantity, reusable)
         return
     }
 
@@ -285,16 +315,25 @@ ok : ^bool) {
 
     on entry_index >= 0 => {
         entry := ^(plan^)[entry_index.as(usize)]
+        added := quantity
+        on reusable => {
+            on entry.reusable_demand >= quantity => return
+            added = quantity - entry.reusable_demand
+            entry.reusable_demand = quantity
+        }
         old_batches = (entry.demand + recipe.output.quantity - 1) / recipe.output.quantity
-        entry.demand += quantity
+        entry.demand += added
         new_batches := (entry.demand + recipe.output.quantity - 1) / recipe.output.quantity
         entry.quantity = new_batches * recipe.output.quantity
     }
     else {
+        reusable_demand : u64 = 0
+        on reusable => reusable_demand = quantity
         batches := (quantity + recipe.output.quantity - 1) / recipe.output.quantity
         plan^.push(PlanEntry {
             name
             demand : quantity
+            reusable_demand
             quantity : batches * recipe.output.quantity
             stage : recipe.depth
             raw : no
@@ -312,8 +351,9 @@ ok : ^bool) {
     i < recipe.ingredients.count;
     i += 1 {
         ingredient := recipe.ingredients[i]
-        required := ingredient.quantity * additional_batches
-        add_need(recipes, plan, ingredient.name, required, ok)
+        required := ingredient.quantity
+        on !ingredient.reusable => required *= additional_batches
+        add_need(recipes, plan, ingredient.name, required, ingredient.reusable, ok)
         on !ok^ => return
     }
 }
@@ -405,7 +445,7 @@ main :: fn (args: []string) -> i32 {
     for i := targets_start;
     i < args.count;
     i += 1 {
-        add_need(recipes[..], ^plan, args[i], 1, ^ok)
+        add_need(recipes[..], ^plan, args[i], 1, no, ^ok)
         on !ok => return 1
     }
 

@@ -7,3 +7,14 @@ workshop: crafting-table wooden-pickaxe
 
 # Stack display examples: 100 becomes 1/36 with --stack 64, while 64 stays 64.
 stack-test: loose-items[100] exact-stack[64]
+
+# Reusable ingredients use the largest global requirement and are not multiplied
+# by the number of batches. Crafted reusable items still respect batch outputs.
+tool[2]: metal
+tool-part-a: material tool[+] raw-tool[+]
+tool-part-b: material tool[+3] raw-tool[+3]
+tool-test: tool-part-a[3] tool-part-b[4]
+mixed-tool-test: tool[+] tool[3]
+
+# Asterisks can be used in symbols, including as a group prefix.
+group-test: *wood[3]

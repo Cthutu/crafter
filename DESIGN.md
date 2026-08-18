@@ -13,7 +13,8 @@ cannot be crafted from other items) followed by stages of crafting, showing the
 intermediate items needed to craft the final products.
 
 Each item is referenced by a unique name (which can have letters, numbers,
-underscores and dashes).
+underscores, dashes and asterisks). An asterisk can be used as a prefix for
+group symbols, such as `*wood`.
 
 An example recipe file is:
 
@@ -23,6 +24,7 @@ An example recipe file is:
 # item_name[quantity]: ingredient1[quantity] ingredient2[quantity] ... ingredientN[quantity]
 #
 # Quantity (in brackets) is optional and defaults to 1 if not specified.
+# A reusable ingredient is written as item_name[+] or item_name[+quantity].
 #
 # If an item can be crafted from other items, those items should also be
 # defined in the recipe file.
@@ -54,6 +56,13 @@ for example, 100 is displayed as `1/36` with a stack size of 64.
 Multiple recipes can be requested in one command. They are combined into a
 single crafting plan, including any ingredients they share:
 `crafter my-recipes.txt crafting-table plank`.
+
+Reusable ingredients, such as tools, are marked with `[+]`. They are required
+only once for the entire crafting plan rather than once per crafting batch. A
+specific global quantity can be requested with `[+n]`; for example,
+`hammer[+3]` requires three hammers regardless of how many recipes use them.
+When the same reusable item appears more than once, the largest requested
+reusable quantity is used.
 
 # Implementation
 
