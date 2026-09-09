@@ -1,14 +1,14 @@
 str :: use std.string
 
-c_fopen :: ffi "c" fopen (^i8, ^i8) -> ^void
+c_fopen :: ffi "c" fopen (filename: ^i8, mode: ^i8) -> ^void
 
-c_fseek :: ffi "c" fseek (^void, i64, i32) -> i32
+c_fseek :: ffi "c" fseek (stream: ^void, offset: i64, origin: i32) -> i32
 
-c_ftell :: ffi "c" ftell (^void) -> i64
+c_ftell :: ffi "c" ftell (stream: ^void) -> i64
 
-c_fread :: ffi "c" fread (^void, usize, usize, ^void) -> usize
+c_fread :: ffi "c" fread (buffer: ^void, size: usize, count: usize, stream: ^void) -> usize
 
-c_fclose :: ffi "c" fclose (^void) -> i32
+c_fclose :: ffi "c" fclose (stream: ^void) -> i32
 
 SEEK_END :: 2
 
