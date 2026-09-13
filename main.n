@@ -1,4 +1,4 @@
-str :: use std.string
+use std.text
 
 c_fopen :: ffi "c" fopen (filename: ^i8, mode: ^i8) -> ^void
 
