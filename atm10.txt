@@ -59,3 +59,17 @@ blue-dye: lapis-lazuli
 metallurgic-infuser: furnace[2] osmium iron[4] redstone[2]
 furnace: cobblestone[8]
 
+1048m-storage-disk: glass[2] quartz-enriched-iron[3] improved-processor[2] advanced-processor 1048m-storage-part
+1048m-storage-part: withering-processor[4] redstone 262m-storage-part[3] quartz-enriched-iron
+withering-processor: raw-withering-processor
+raw-withering-processor: processor-binding nether-star silicon redstone
+262m-storage-part: withering-processor[4] redstone 65536k-storage-part[3] quartz-enriched-iron
+65536k-storage-part: advanced-processor[4] quartz-enriched-iron redstone 16384k-storage-part[3]
+16384k-storage-part: advanced-processor[4] quartz-enriched-iron redstone 1024k-storage-part[3]
+1024k-storage-part: advanced-processor[4] quartz-enriched-iron redstone 256k-storage-part[3]
+256k-storage-part: advanced-processor[4] quartz-enriched-iron redstone 64k-storage-part[3]
+65536k-storage-disk: glass[2] quartz-enriched-iron[3] improved-processor[2] advanced-processor 65536k-storage-part
+
+*big-disk: 65536k-storage-disk
+*very-big-disk: 1048m-storage-disk
+
