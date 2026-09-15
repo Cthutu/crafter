@@ -1,0 +1,8 @@
+# Owning the outer tool removes its entire branch, including the inner tool.
+outer-tool: inner-tool[+] shared[2] dedicated
+inner-tool: inner-material
+product: outer-tool[+] shared[3]
+
+# An owned tool can break an otherwise cyclic crafting dependency.
+cyclic-product: cyclic-tool[+] material
+cyclic-tool: cyclic-product

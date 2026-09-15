@@ -229,7 +229,25 @@ read_file :: fn (path: string, contents: ^[..]u8) -> bool {
     return yes
 }
 
-recipe_depth :: fn (recipes: []Recipe, index: usize, ok: ^bool) -> usize {
+contains_name :: fn (names: []string, name: string) -> bool {
+    for i: usize = 0; i < names.count; i += 1 {
+        on names[i] == name => return yes
+    }
+    return no
+}
+
+collect_tools :: fn (recipes: []Recipe, tools: ^[..]string) {
+    for i: usize = 0; i < recipes.count; i += 1 {
+        for j: usize = 0; j < recipes[i].ingredients.count; j += 1 {
+            ingredient := recipes[i].ingredients[j]
+            on ingredient.reusable && !contains_name((tools^)[..], ingredient.name) => {
+                tools^.push(ingredient.name)
+            }
+        }
+    }
+}
+
+recipe_depth :: fn (recipes: []Recipe, index: usize, excluded: []string, ok: ^bool) -> usize {
     recipe := ^recipes[index]
     on recipe.depth_state == 2 => return recipe.depth
     on recipe.depth_state == 1 => {
@@ -243,10 +261,13 @@ recipe_depth :: fn (recipes: []Recipe, index: usize, ok: ^bool) -> usize {
     for i: usize = 0;
     i < recipe.ingredients.count;
     i += 1 {
-        ingredient_index := find_recipe(recipes, recipe.ingredients[i].name)
+        ingredient := recipe.ingredients[i]
+        on ingredient.reusable && contains_name(excluded, ingredient.name) => again
+        ingredient_index := find_recipe(recipes, ingredient.name)
         on ingredient_index >= 0 => {
             ingredient_depth := recipe_depth(recipes,
             ingredient_index.as(usize),
+            excluded,
             ok)
             on !ok^ => return 0
             on ingredient_depth + 1 > depth => depth = ingredient_depth + 1
@@ -302,7 +323,9 @@ plan : ^[..]PlanEntry,
 name : string,
 quantity : u64,
 reusable : bool,
+excluded : []string,
 ok : ^bool) {
+    on reusable && contains_name(excluded, name) => return
     recipe_index := find_recipe(recipes, name)
     on recipe_index < 0 => {
         add_raw_need(plan, name, quantity, reusable)
@@ -353,7 +376,7 @@ ok : ^bool) {
         ingredient := recipe.ingredients[i]
         required := ingredient.quantity
         on !ingredient.reusable => required *= additional_batches
-        add_need(recipes, plan, ingredient.name, required, ingredient.reusable, ok)
+        add_need(recipes, plan, ingredient.name, required, ingredient.reusable, excluded, ok)
         on !ok^ => return
     }
 }
@@ -368,7 +391,15 @@ print_quantity :: fn (name: string, quantity: u64, stack_size: u64) {
     prn($"    {name}: {quantity}")
 }
 
-print_plan :: fn (plan: []PlanEntry, max_stage: usize, stack_size: u64) {
+print_plan :: fn (plan: []PlanEntry, max_stage: usize, stack_size: u64, tools: []string, excluded: []string) {
+    on tools.count > 0 => {
+        prn("Tools (exclude with -symbol):")
+        for i: usize = 0; i < tools.count; i += 1 {
+            on contains_name(excluded, tools[i]) => prn($"    {tools[i]} (already owned)")
+            else { prn($"    {tools[i]}") }
+        }
+        prn("")
+    }
     prn("Ingredients:")
     for i: usize = 0;
     i < plan.count;
@@ -409,7 +440,7 @@ main :: fn (args: []string) -> i32 {
         targets_start = 4
     }
     else {
-        prn("Usage: crafter [--stack <n>] <recipes-file> <recipe>...")
+        prn("Usage: crafter [--stack <n>] <recipes-file> <recipe>... [-symbol ...]")
         return 2
     }
 
@@ -427,14 +458,39 @@ main :: fn (args: []string) -> i32 {
         return 1
     }
 
+    tools : [..]string
+    defer tools.free()
+    collect_tools(recipes[..], ^tools)
+
+    excluded : [..]string
+    defer excluded.free()
+    targets : [..]string
+    defer targets.free()
+    for i := targets_start; i < args.count; i += 1 {
+        argument := args[i]
+        on argument.count > 0 && argument.data[0] == '-' => {
+            name := argument[1 ..]
+            on !contains_name(tools[..], name) => {
+                prn($"Unknown tool '{name}': exclusions must name an ingredient marked with [+] or [+n].")
+                return 2
+            }
+            on !contains_name(excluded[..], name) => excluded.push(name)
+        }
+        else { targets.push(argument) }
+    }
+    on targets.count == 0 => {
+        prn("At least one recipe target is required.")
+        return 2
+    }
+
     max_stage : usize = 0
     ok := yes
-    for i := targets_start;
-    i < args.count;
+    for i: usize = 0;
+    i < targets.count;
     i += 1 {
-        target_index := find_recipe(recipes[..], args[i])
+        target_index := find_recipe(recipes[..], targets[i])
         on target_index >= 0 => {
-            target_depth := recipe_depth(recipes[..], target_index.as(usize), ^ok)
+            target_depth := recipe_depth(recipes[..], target_index.as(usize), excluded[..], ^ok)
             on !ok => return 1
             on target_depth > max_stage => max_stage = target_depth
         }
@@ -442,13 +498,13 @@ main :: fn (args: []string) -> i32 {
 
     plan : [..]PlanEntry
     defer plan.free()
-    for i := targets_start;
-    i < args.count;
+    for i: usize = 0;
+    i < targets.count;
     i += 1 {
-        add_need(recipes[..], ^plan, args[i], 1, no, ^ok)
+        add_need(recipes[..], ^plan, targets[i], 1, no, excluded[..], ^ok)
         on !ok => return 1
     }
 
-    print_plan(plan[..], max_stage, stack_size)
+    print_plan(plan[..], max_stage, stack_size, tools[..], excluded[..])
     return 0
 }
