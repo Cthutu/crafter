@@ -64,8 +64,9 @@ specific global quantity can be requested with `[+n]`; for example,
 When the same reusable item appears more than once, the largest requested
 reusable quantity is used.
 
-The output lists all tools marked with `[+]` or `[+n]` in the recipe file before
-the ingredients, so their symbols are easy to find. Tools you already own can
+The output lists tools marked with `[+]` or `[+n]` used directly or indirectly
+by the requested recipes before the ingredients, so their symbols are easy to
+find. Tools you already own can
 be excluded with `-symbol` after the recipes file, before or after targets:
 
 ```
@@ -74,7 +75,8 @@ crafter --stack 64 atm10.txt *energy -metallurgic-infuser -coal-generator
 
 Excluded tools are marked as already owned in the tool list. Their reusable
 requirements and the ingredients needed only to craft them are removed from
-the plan. Ingredients shared with other recipes are still counted. An exclusion
+the plan. Tools needed only to craft an excluded tool are also omitted from
+the tool list. Ingredients shared with other recipes are still counted. An exclusion
 also covers the full quantity specified by `[+n]`. Consumable uses of the same
 symbol and explicitly requested targets are still crafted. Unknown tool
 exclusions are rejected, and at least one recipe target is required.

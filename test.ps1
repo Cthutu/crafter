@@ -20,6 +20,14 @@ try {
         if ($Output -match $Pattern) { throw "Unexpected pattern '$Pattern':`n$Output" }
     }
 
+    $output = Run-Crafter @('--stack', '64', 'atm10.txt', '*jetpack')
+    Assert-Absent $output '(?m)^Tools |iron-ore-hammer|metallurgic-infuser|coal-generator'
+    Assert-Match $output '    emerald-jetpack: 1'
+
+    $output = Run-Crafter @('recipes.tools.test.txt', 'product')
+    Assert-Match $output '(?s)^Tools .*    outer-tool\n.*    inner-tool\n\nIngredients:'
+    Assert-Absent $output 'cyclic-tool'
+
     $output = Run-Crafter @('recipes.test.txt', 'tool-test')
     Assert-Match $output '(?s)^Tools .*raw-tool\n\nIngredients:'
     Assert-Match $output '    metal: 2'
@@ -37,8 +45,17 @@ try {
     Assert-Match $output '    metal: 2'
     $output = Run-Crafter @('recipes.test.txt', 'tool', '-tool')
     Assert-Match $output '    tool: 2'
+    Assert-Absent $output '(?m)^Tools '
+
+    $output = Run-Crafter @('recipes.test.txt', 'tool-part-a', 'tool-part-b')
+    if ([regex]::Matches($output, '(?m)^    tool$').Count -ne 1) {
+        throw "Expected shared tool to be listed once:`n$output"
+    }
+    Assert-Match $output '(?m)^    raw-tool$'
 
     $output = Run-Crafter @('recipes.tools.test.txt', 'product', '-outer-tool')
+    Assert-Match $output '    outer-tool \(already owned\)'
+    Assert-Absent $output 'inner-tool|cyclic-tool'
     Assert-Match $output '    shared: 3'
     Assert-Absent $output '    (outer-tool|inner-tool|inner-material|dedicated):'
     Assert-Absent $output 'Stage 2:'

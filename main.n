@@ -324,7 +324,9 @@ name : string,
 quantity : u64,
 reusable : bool,
 excluded : []string,
+required_tools : ^[..]string,
 ok : ^bool) {
+    on reusable && !contains_name((required_tools^)[..], name) => required_tools^.push(name)
     on reusable && contains_name(excluded, name) => return
     recipe_index := find_recipe(recipes, name)
     on recipe_index < 0 => {
@@ -376,7 +378,7 @@ ok : ^bool) {
         ingredient := recipe.ingredients[i]
         required := ingredient.quantity
         on !ingredient.reusable => required *= additional_batches
-        add_need(recipes, plan, ingredient.name, required, ingredient.reusable, excluded, ok)
+        add_need(recipes, plan, ingredient.name, required, ingredient.reusable, excluded, required_tools, ok)
         on !ok^ => return
     }
 }
@@ -498,13 +500,15 @@ main :: fn (args: []string) -> i32 {
 
     plan : [..]PlanEntry
     defer plan.free()
+    required_tools : [..]string
+    defer required_tools.free()
     for i: usize = 0;
     i < targets.count;
     i += 1 {
-        add_need(recipes[..], ^plan, targets[i], 1, no, excluded[..], ^ok)
+        add_need(recipes[..], ^plan, targets[i], 1, no, excluded[..], ^required_tools, ^ok)
         on !ok => return 1
     }
 
-    print_plan(plan[..], max_stage, stack_size, tools[..], excluded[..])
+    print_plan(plan[..], max_stage, stack_size, required_tools[..], excluded[..])
     return 0
 }
