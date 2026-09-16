@@ -15,6 +15,9 @@ run *args:
 clean:
     rm -rf _*
 
+craft *args:
+    just run --stack 64 atm10.txt {{args}}
+
 alias ch := check
 alias b := build
 alias r := run
