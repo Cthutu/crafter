@@ -114,7 +114,7 @@ basic-coil: iron[4] redstone[2] stick
 flux-controller: flux-block[5] flux-dust[2] flux-core
 flux-block: flux-dust[5] flux-core[4]
 flux-dust: redstone
-flux-core: obsidian[4] flux-dust[4] eye-of-ender
+flux-core[4]: obsidian[4] flux-dust[4] eye-of-ender
 eye-of-ender: ender-pearl blaze-powder
 blaze-powder[2]: blaze-rod
 flux-plug: flux-block flux-core[4]
