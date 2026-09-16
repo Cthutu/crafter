@@ -16,7 +16,7 @@ basic-processor: raw-basic-processor
 raw-basic-processor: processor-binding iron silicon redstone
 rs-crafting-grid: rs-grid advanced-processor crafting-table
 crafting-table: plank[4]
-stone: cobble-stone
+stone: cobblestone
 silicon: quartz
 64k-storage-disk: glass[2] redstone[3] quartz-enriched-iron[3] 64k-storage-part
 64k-storage-part: advanced-processor[4] quartz-enriched-iron redstone 16k-storage-part[3]
