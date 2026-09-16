@@ -111,4 +111,18 @@ basic-coil: iron[4] redstone[2] stick
 
 *jetpack: emerald-jetpack
 
+flux-controller: flux-block[5] flux-dust[2] flux-core
+flux-block: flux-dust[5] flux-core[4]
+flux-dust: redstone
+flux-core: obsidian[4] flux-dust[4] eye-of-ender
+eye-of-ender: ender-pearl blaze-powder
+blaze-powder[2]: blaze-rod
+flux-plug: flux-block flux-core[4]
+basic-flux-storage: flux-block[6] glass-pane[2]
+herculean-flux-storage: basic-flux-storage[6] glass-pane[2]
+
+*flux: flux-controller herculean-flux-storage flux-plug
+*small-flux: flux-controller basic-flux-storage flux-plug
+
+
 
