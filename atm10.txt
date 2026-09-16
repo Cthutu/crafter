@@ -73,3 +73,42 @@ raw-withering-processor: processor-binding nether-star silicon redstone
 *big-disk: 65536k-storage-disk
 *very-big-disk: 1048m-storage-disk
 
+platinum: raw-platinum
+
+emerald-jetpack: emerald[4] emerald-capacitor emerald-thruster[2] platinum-jetpack
+platinum-jetpack: platinum[4] platinum-capacitor platinum-thruster[2] gold-jetpack
+gold-jetpack: gold[4] gold-capacitor gold-thruster[2] iron-jetpack
+iron-jetpack: iron[4] iron-capacitor iron-thruster[2] stone-jetpack
+stone-jetpack: stone[4] stone-capacitor stone-thruster[2] wood-jetpack
+wood-jetpack: plank[4] wood-capacitor wood-thruster[2] leather-strap
+
+leather-strap: iron-nugget[2] leather[3]
+
+emerald-capacitor: emerald[6] emerald-energy-cell[3]
+platinum-capacitor: platinum[6] platinum-energy-cell[3]
+gold-capacitor: gold[6] gold-energy-cell[3]
+iron-capacitor: iron[6] iron-energy-cell[3]
+stone-capacitor: stone[6] stone-energy-cell[3]
+wood-capacitor: plank[6] wood-energy-cell[3]
+
+emerald-energy-cell: redstone[2] emerald[2] elite-coil
+platinum-energy-cell: redstone[2] platinum[2] advanced-coil
+gold-energy-cell: redstone[2] gold[2] advanced-coil
+iron-energy-cell: redstone[2] iron[2] basic-coil
+stone-energy-cell: redstone[2] stone[2] basic-coil 
+wood-energy-cell: redstone[2] plank[2] basic-coil
+
+emerald-thruster: emerald[4] emerald-energy-cell elite-coil[3] furnace
+platinum-thruster: platinum[4] platinum-energy-cell advanced-coil[3] furnace
+gold-thruster: gold[4] gold-energy-cell advanced-coil[3] furnace
+iron-thruster: iron[4] iron-energy-cell basic-coil[3] furnace
+stone-thruster: stone[4] stone-energy-cell basic-coil[3] furnace
+wood-thruster: plank[4] wood-energy-cell basic-coil[3] furnace
+
+elite-coil: diamond[4] redstone[2] stick
+advanced-coil: gold[4] redstone[2] stick
+basic-coil: iron[4] redstone[2] stick
+
+*jetpack: emerald-jetpack
+
+
