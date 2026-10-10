@@ -124,5 +124,20 @@ herculean-flux-storage: basic-flux-storage[6] glass-pane[2]
 *flux: flux-controller herculean-flux-storage flux-plug
 *small-flux: flux-controller basic-flux-storage flux-plug
 
+256k-item-storage-cell: quartz-glass[2] redstone[3] iron[2] copper 256k-storage-component
+quartz-glass[4]: certus-quartz-dust[5] glass[4]
+certus-quartz-dust: certus-quartz inscriber[+]
+256k-storage-component: sky-stone-dust[4] calculation-processor quartz-glass 64k-storage-component[3]
+64k-storage-component: glowstone-dust[4] calculation-processor quartz-glass 16k-storage-component[3]
+16k-storage-component: glowstone-dust[4] calculation-processor quartz-glass 4k-storage-component[3]
+4k-storage-component: redstone[4] calculation-processor quartz-glass 1k-storage-component[3]
+1k-storage-component: redstone[4] certus-quartz[4] logic-processor
+calculation-processor: printed-calculation-circuit printed-silicon redstone inscriber[+]
+logic-processor: printed-logic-circuit printed-silicon redstone inscriber[+]
+printed-silicon: inscriber-silicon-press[+] silicon inscriber[+]
+printed-calculation-circuit: inscriber-calculation-press[+] certus-quartz inscriber[+]
+printed-logic-circuit: inscriber-logic-press[+] gold inscriber[+]
+sky-stone-dust: sky-stone inscriber[+]
 
+*ae-disk: 256k-item-storage-cell
 
